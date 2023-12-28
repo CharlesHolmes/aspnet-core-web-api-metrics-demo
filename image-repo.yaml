@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Creates ECR repos to hold the weather service and client images"
+Resources:
+  WeatherServiceImageRepo:
+    Type: AWS::ECR::Repository
+    Properties:
+      EmptyOnDelete: true
+      RepositoryName: metrics-weather-service
+  WeatherClientImageRepo:
+    Type: AWS::ECR::Repository
+    Properties:
+      EmptyOnDelete: true
+      RepositoryName: metrics-weather-client
+Outputs:
+  WeatherServiceImageRepoArn:
+    Value: !GetAtt WeatherServiceImageRepo.Arn
+  WeatherServiceImageRepoUri:
+    Value: !GetAtt WeatherServiceImageRepo.RepositoryUri
+  WeatherClientImageRepoArn:
+    Value: !GetAtt WeatherClientImageRepo.Arn
+  WeatherClientImageRepoUri:
+    Value: !GetAtt WeatherClientImageRepo.RepositoryUri

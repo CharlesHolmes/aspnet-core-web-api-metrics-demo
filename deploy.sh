@@ -1,0 +1,32 @@
+#!/bin/bash
+
+aws cloudformation deploy --template-file image-repo.yaml --stack-name metrics-demo-repos --tags Demo=MetricDemo
+ACCOUNT=$(aws sts get-caller-identity | jq -r '.Account')
+REGION=$(aws configure get region)
+IMAGE_REPO=$(aws cloudformation describe-stacks --stack-name metrics-demo-repos)
+SERVICE_REPO_URI=$(echo $IMAGE_REPO | jq -r '.Stacks[] | select(.StackName == "metrics-demo-repos") | .Outputs[] | select(.OutputKey == "WeatherServiceImageRepoUri") | .OutputValue')
+SERVICE_REPO_ARN=$(echo $IMAGE_REPO | jq -r '.Stacks[] | select(.StackName == "metrics-demo-repos") | .Outputs[] | select(.OutputKey == "WeatherServiceImageRepoArn") | .OutputValue')
+CLIENT_REPO_URI=$(echo $IMAGE_REPO | jq -r '.Stacks[] | select(.StackName == "metrics-demo-repos") | .Outputs[] | select(.OutputKey == "WeatherClientImageRepoUri") | .OutputValue')
+CLIENT_REPO_ARN=$(echo $IMAGE_REPO | jq -r '.Stacks[] | select(.StackName == "metrics-demo-repos") | .Outputs[] | select(.OutputKey == "WeatherClientImageRepoArn") | .OutputValue')
+
+aws ecr get-login-password | docker login --username AWS --password-stdin "${ACCOUNT}.dkr.ecr.${REGION}.amazonaws.com"
+docker build -t weatherforecastservice:latest WeatherForecastService
+docker tag weatherforecastservice:latest "${SERVICE_REPO_URI}"
+docker push "${SERVICE_REPO_URI}"
+docker tag weatherforecastservice:latest "${SERVICE_REPO_URI}:latest"
+docker push "${SERVICE_REPO_URI}:latest"
+
+DATADOG_SECRET_ARN=$(aws secretsmanager describe-secret --secret-id datadog_id | jq -r '.ARN')
+
+aws cloudformation deploy \
+    --template-file cfn.yaml \
+    --stack-name metrics-demo \
+    --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
+    --parameter-overrides \
+        DatadogSecretArn="${DATADOG_SECRET_ARN}" \
+        WeatherServiceImageRepoArn="${SERVICE_REPO_ARN}" \
+        WeatherServiceImageRepoUri="${SERVICE_REPO_URI}" \
+    --tags \
+        Demo=MetricDemo
+
+aws cloudformation wait stack-create-complete --stack-name metrics-demo

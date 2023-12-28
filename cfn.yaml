@@ -1,0 +1,278 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Deploys a service and client in AppRunner to demonstrate metric collection"
+Parameters:
+  WeatherServiceImageRepoArn:
+    Description: ARN of the ECR repository where the weather service image is stored
+    Type: String
+    AllowedPattern: "arn:aws:ecr:.+"
+  WeatherServiceImageRepoUri:
+    Description: URI of the ECR repository where the weather service image is stored
+    Type: String
+    AllowedPattern: "[0-9]+(.)dkr(.)ecr(.).+"
+  WeatherServiceContainerPort:
+    Type: Number
+    Default: 3000
+  WeatherServiceLoadBalancerPort:
+    Type: Number
+    Default: 80
+  DatadogSecretArn: #TODO (cholmes) enable Xray for services
+    Description: ARN of the secret containing the Datadog ID we will be using
+    Type: String
+    AllowedPattern: "arn:aws:secretsmanager:.+"
+  VPCIPRange:
+    Type: String
+    Default: 10.0.0.0/16
+  PublicSubnetAZ1IPRange:
+    Type: String
+    Default: 10.0.1.0/24
+  PublicSubnetAZ2IPRange:
+    Type: String
+    Default: 10.0.2.0/24
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VPCIPRange
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+  PublicSubnetDefaultRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+    DependsOn: VPCGatewayAttachment
+  PublicSubnetAZ1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PublicSubnetAZ1IPRange
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [0, !GetAZs ""]
+  PublicSubnetAZ1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetAZ1
+      RouteTableId: !Ref PublicRouteTable
+  PublicSubnetAZ2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PublicSubnetAZ2IPRange
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [1, !GetAZs ""]
+  PublicSubnetAZ2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetAZ2
+      RouteTableId: !Ref PublicRouteTable
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: MetricsDemoCluster
+  WeatherService:
+    Type: AWS::ECS::Service
+    DependsOn: LoadBalancerListener
+    Properties: 
+      ServiceName: WeatherService
+      Cluster: !Ref Cluster
+      TaskDefinition: !Ref WeatherServiceTaskDefinition
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+      DesiredCount:  1
+      HealthCheckGracePeriodSeconds: 60
+      LaunchType: FARGATE
+      NetworkConfiguration: 
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - !Ref PublicSubnetAZ1
+            - !Ref PublicSubnetAZ2
+          SecurityGroups:
+            - !Ref WeatherServiceSecurityGroup
+      LoadBalancers:
+        - ContainerName: WeatherService
+          ContainerPort: !Ref WeatherServiceContainerPort
+          TargetGroupArn: !Ref WeatherServiceTargetGroup
+  WeatherServiceTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    DependsOn: WeatherServiceLogGroup
+    Properties:
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: 256
+      Memory: 0.5GB
+      ExecutionRoleArn: !Ref WeatherServiceExecutionRole
+      TaskRoleArn: !Ref WeatherServiceTaskRole
+      ContainerDefinitions:
+        - Name: WeatherService
+          Image: !Join [ ":", [ !Ref WeatherServiceImageRepoUri, "latest" ] ]
+          PortMappings:
+            - ContainerPort: !Ref WeatherServiceContainerPort
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-region: !Ref AWS::Region
+              awslogs-group: !Ref WeatherServiceLogGroup
+              awslogs-stream-prefix: ecs
+        - Name: datadog-agent
+          Image: 'public.ecr.aws/datadog/agent:latest'
+          Environment:
+            - Name: DD_API_KEY
+              Value: !Join [ '', ['{{resolve:', !Ref DatadogSecretArn, '}}']]
+            - Name: ECS_FARGATE
+              Value: true
+            - Name: DD_APM_ENABLED
+              Value: true
+            - Name: DD_SITE
+              Value: datadoghq.com
+  WeatherServiceTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: WeatherServiceTaskRole
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: datadog-permissions
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - 'ecs:ListClusters'
+                  - 'ecs:ListContainerInstances'
+                  - 'ecs:DescribeContainerInstances'
+                Resource:
+                  - '*'
+        - PolicyName: write-metrics
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'cloudwatch:PutMetricData'
+                Resource:
+                  - '*'
+  WeatherServiceExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: WeatherServiceExecutionRole
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy'
+  WeatherServiceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: WeatherServiceSecurityGroup
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref WeatherServiceContainerPort
+          ToPort: !Ref WeatherServiceContainerPort
+          SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
+  WeatherServiceTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 20
+      HealthCheckPath: /WeatherForecast/GetWithUniformLatency
+      HealthCheckTimeoutSeconds: 10
+      UnhealthyThresholdCount: 2
+      HealthyThresholdCount: 2
+      Name: WeatherServiceTargetGroup
+      Port: !Ref WeatherServiceContainerPort
+      Protocol: HTTP
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 60
+      TargetType: ip
+      VpcId: !Ref VPC
+  LoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: LoadBalancerSecurityGroup
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref WeatherServiceLoadBalancerPort
+          ToPort: !Ref WeatherServiceLoadBalancerPort
+          CidrIp: 0.0.0.0/0
+  LoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - TargetGroupArn: !Ref WeatherServiceTargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: !Ref WeatherServiceLoadBalancerPort
+      Protocol: HTTP
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    DependsOn: InternetGateway
+    Properties:
+      Name: LoadBalancer
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref LoadBalancerSecurityGroup
+      Subnets:
+            - !Ref PublicSubnetAZ1
+            - !Ref PublicSubnetAZ2
+  WeatherServiceLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/WeatherService/TaskDefinition
+Outputs:
+  LoadBalancerHostname:
+    Description: Load balancer hostname
+    Value: !GetAtt LoadBalancer.DNSName
+  # WeatherAPICaller:
+  #   Type: AWS::AppRunner::Service
+  #   Properties:
+  #     ServiceName: "WeatherAPICaller"
+  #     SourceConfiguration:
+  #       AuthenticationConfiguration:
+  #         ConnectionArn: !Ref GithubConnectionArn
+  #       AutoDeploymentsEnabled: true
+  #       CodeRepository:
+  #         RepositoryUrl: "https://github.com/CharlesHolmes/DotNetCoreWebApiMetricsDemo"
+  #         SourceCodeVersion:
+  #           Type: "BRANCH"
+  #           Value: "main"
+  #         CodeConfiguration:
+  #           ConfigurationSource: "API"
+  #           CodeConfigurationValues:
+  #             Runtime: "NODEJS_14"
+  #             BuildCommand: "bash ./build.sh"
+  #             StartCommand: "bash ./run.sh"
+  #             Port: "3000"
+  #             RuntimeEnvironmentVariables:
+  #               - Name: "WEATHER_SERVICE_HOSTNAME"
+  #                 Value: !GetAtt WeatherAPIService.ServiceUrl
+  #         SourceDirectory: "SimulatedClients"
+  #     InstanceConfiguration:
+  #       Cpu: "0.25 vCPU"
+  #       Memory: "0.5 GB"
+  #     ObservabilityConfiguration:
+  #       ObservabilityConfigurationArn: !Ref ObservabilityConfigurationArn
+  #       ObservabilityEnabled: true

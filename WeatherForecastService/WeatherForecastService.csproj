@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <Trimming>full</Trimming>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Remove="apprunner-cli-input.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="deploy.sh" />
+    <None Remove="simulate_load.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.CloudWatch" Version="3.7.301.10" />
+    <PackageReference Include="AWSSDK.CloudWatchLogs" Version="3.7.302.9" />
+    <PackageReference Include="AWSSDK.Core" Version="3.7.300.26" />
+    <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.7.300" />
+    <PackageReference Include="Datadog.Trace.Bundle" Version="2.44.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+  </ItemGroup>
+
+</Project>
