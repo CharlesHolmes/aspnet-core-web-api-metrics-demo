@@ -6,7 +6,7 @@ Parameters:
     Type: String
     AllowedPattern: "arn:aws:ecr:.+"
   WeatherServiceUriWithTag:
-    Description: The hash (SHA-256) of the weather service image that should be running
+    Description: The URI of the weather service image that should be running, including its SHA-256 digest.
     Type: String
   WeatherServiceContainerPort:
     Type: Number
@@ -18,6 +18,9 @@ Parameters:
     Description: ARN of the secret containing the Datadog ID we will be using
     Type: String
     AllowedPattern: "arn:aws:secretsmanager:.+"
+  SimulatedClientUriWithTag:
+    Description: The URI of the simulated client image that should be running, including its SHA-256 digest.
+    Type: String
   VPCIPRange:
     Type: String
     Default: 10.0.0.0/16
@@ -115,7 +118,7 @@ Resources:
       RequiresCompatibilities:
         - FARGATE
       Cpu: 256
-      Memory: 0.5GB
+      Memory: 2GB
       ExecutionRoleArn: !Ref WeatherServiceExecutionRole
       TaskRoleArn: !Ref WeatherServiceTaskRole
       ContainerDefinitions:
@@ -268,37 +271,64 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: /ecs/WeatherService/DatadogSidecarContainer
+  SimulatedClient:
+    Type: AWS::ECS::Service
+    Properties: 
+      ServiceName: SimulatedClient
+      Cluster: !Ref Cluster
+      TaskDefinition: !Ref SimulatedClientTaskDefinition
+      DesiredCount:  1
+      LaunchType: FARGATE
+      NetworkConfiguration: 
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - !Ref PublicSubnetAZ1
+            - !Ref PublicSubnetAZ2
+  SimulatedClientTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    DependsOn:
+      - SimulatedClientLogGroup
+    Properties:
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: 256
+      Memory: 0.5GB
+      ExecutionRoleArn: !Ref SimulatedClientExecutionRole
+      ContainerDefinitions:
+        - Name: SimulatedClient
+          Image: !Ref SimulatedClientUriWithTag
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-region: !Ref AWS::Region
+              awslogs-group: !Ref SimulatedClientLogGroup
+              awslogs-stream-prefix: ecs
+          Environment:
+            - Name: WEATHER_SERVICE_HOSTNAME
+              Value: !GetAtt LoadBalancer.DNSName
+            - Name: PROTOCOL
+              Value: http
+            - Name: VU_COUNT
+              Value: 10
+  SimulatedClientExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: SimulatedClientExecutionRole
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy'
+  SimulatedClientLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/SimulatedClient/SimulatedClientContainer
 Outputs:
   LoadBalancerHostname:
     Description: Load balancer hostname
     Value: !GetAtt LoadBalancer.DNSName
-  # WeatherAPICaller:
-  #   Type: AWS::AppRunner::Service
-  #   Properties:
-  #     ServiceName: "WeatherAPICaller"
-  #     SourceConfiguration:
-  #       AuthenticationConfiguration:
-  #         ConnectionArn: !Ref GithubConnectionArn
-  #       AutoDeploymentsEnabled: true
-  #       CodeRepository:
-  #         RepositoryUrl: "https://github.com/CharlesHolmes/DotNetCoreWebApiMetricsDemo"
-  #         SourceCodeVersion:
-  #           Type: "BRANCH"
-  #           Value: "main"
-  #         CodeConfiguration:
-  #           ConfigurationSource: "API"
-  #           CodeConfigurationValues:
-  #             Runtime: "NODEJS_14"
-  #             BuildCommand: "bash ./build.sh"
-  #             StartCommand: "bash ./run.sh"
-  #             Port: "3000"
-  #             RuntimeEnvironmentVariables:
-  #               - Name: "WEATHER_SERVICE_HOSTNAME"
-  #                 Value: !GetAtt WeatherAPIService.ServiceUrl
-  #         SourceDirectory: "SimulatedClients"
-  #     InstanceConfiguration:
-  #       Cpu: "0.25 vCPU"
-  #       Memory: "0.5 GB"
-  #     ObservabilityConfiguration:
-  #       ObservabilityConfigurationArn: !Ref ObservabilityConfigurationArn
-  #       ObservabilityEnabled: true

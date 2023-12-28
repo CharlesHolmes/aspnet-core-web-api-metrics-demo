@@ -40,7 +40,7 @@
         public int GetUniformLatencyMs()
         {
             UpdateLatencies();
-            return _uniformMaxMs;
+            return _random.Next(100, _uniformMaxMs);
         }
     }
 }
