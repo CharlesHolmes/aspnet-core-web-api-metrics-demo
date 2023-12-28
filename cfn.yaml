@@ -5,10 +5,9 @@ Parameters:
     Description: ARN of the ECR repository where the weather service image is stored
     Type: String
     AllowedPattern: "arn:aws:ecr:.+"
-  WeatherServiceImageRepoUri:
-    Description: URI of the ECR repository where the weather service image is stored
+  WeatherServiceUriWithTag:
+    Description: The hash (SHA-256) of the weather service image that should be running
     Type: String
-    AllowedPattern: "[0-9]+(.)dkr(.)ecr(.).+"
   WeatherServiceContainerPort:
     Type: Number
     Default: 3000
@@ -108,7 +107,9 @@ Resources:
           TargetGroupArn: !Ref WeatherServiceTargetGroup
   WeatherServiceTaskDefinition:
     Type: AWS::ECS::TaskDefinition
-    DependsOn: WeatherServiceLogGroup
+    DependsOn:
+      - WeatherServiceLogGroup
+      - WeatherServiceDatadogSidecarLogGroup
     Properties:
       NetworkMode: awsvpc
       RequiresCompatibilities:
@@ -119,7 +120,7 @@ Resources:
       TaskRoleArn: !Ref WeatherServiceTaskRole
       ContainerDefinitions:
         - Name: WeatherService
-          Image: !Join [ ":", [ !Ref WeatherServiceImageRepoUri, "latest" ] ]
+          Image: !Ref WeatherServiceUriWithTag
           PortMappings:
             - ContainerPort: !Ref WeatherServiceContainerPort
           LogConfiguration:
@@ -130,15 +131,26 @@ Resources:
               awslogs-stream-prefix: ecs
         - Name: datadog-agent
           Image: 'public.ecr.aws/datadog/agent:latest'
-          Environment:
+          Secrets:
             - Name: DD_API_KEY
-              Value: !Join [ '', ['{{resolve:', !Ref DatadogSecretArn, '}}']]
+              ValueFrom: !Ref DatadogSecretArn
+          Environment:
             - Name: ECS_FARGATE
               Value: true
             - Name: DD_APM_ENABLED
               Value: true
+            - Name: DD_APM_NON_LOCAL_TRAFFIC
+              Value: true
+            - Name: DD_DOGSTATSD_NON_LOCAL_TRAFFIC
+              Value: true
             - Name: DD_SITE
-              Value: datadoghq.com
+              Value: us5.datadoghq.com
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-region: !Ref AWS::Region
+              awslogs-group: !Ref WeatherServiceDatadogSidecarLogGroup
+              awslogs-stream-prefix: ecs
   WeatherServiceTaskRole:
     Type: AWS::IAM::Role
     Properties:
@@ -182,6 +194,16 @@ Resources:
             Action: 'sts:AssumeRole'
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy'
+      Policies:
+        - PolicyName: read-datadog-api-key
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+            - Effect: Allow
+              Action:
+              - 'secretsmanager:GetSecretValue'
+              Resource:
+              - !Ref DatadogSecretArn
   WeatherServiceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -241,7 +263,11 @@ Resources:
   WeatherServiceLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: /ecs/WeatherService/TaskDefinition
+      LogGroupName: /ecs/WeatherService/WeatherServiceContainer
+  WeatherServiceDatadogSidecarLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/WeatherService/DatadogSidecarContainer
 Outputs:
   LoadBalancerHostname:
     Description: Load balancer hostname
