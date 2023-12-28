@@ -7,8 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherForecastService", "W
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SimulatedClients", "SimulatedClients", "{CA5A4777-7C9D-4DEA-8CF1-D0983E3150FC}"
 	ProjectSection(SolutionItems) = preProject
-		SimulatedClients\build.sh = SimulatedClients\build.sh
-		SimulatedClients\helloworld.js = SimulatedClients\helloworld.js
+		SimulatedClients\Dockerfile = SimulatedClients\Dockerfile
 		SimulatedClients\run.sh = SimulatedClients\run.sh
 		SimulatedClients\simulate_load.js = SimulatedClients\simulate_load.js
 	EndProjectSection
@@ -18,7 +17,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		cfn.yaml = cfn.yaml
 		delete-everything.sh = delete-everything.sh
 		deploy.sh = deploy.sh
-		delete-services.sh = delete-services.sh
+		image-repo.yaml = image-repo.yaml
 	EndProjectSection
 EndProject
 Global

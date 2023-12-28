@@ -10,10 +10,16 @@ CLIENT_REPO_URI=$(echo $IMAGE_REPO | jq -r '.Stacks[] | select(.StackName == "me
 CLIENT_REPO_ARN=$(echo $IMAGE_REPO | jq -r '.Stacks[] | select(.StackName == "metrics-demo-repos") | .Outputs[] | select(.OutputKey == "WeatherClientImageRepoArn") | .OutputValue')
 
 aws ecr get-login-password | docker login --username AWS --password-stdin "${ACCOUNT}.dkr.ecr.${REGION}.amazonaws.com"
+
 docker build -t metrics-weather-service:latest WeatherForecastService
 docker tag metrics-weather-service:latest "${SERVICE_REPO_URI}:latest"
 docker push "${SERVICE_REPO_URI}:latest"
 SERVICE_IMAGE_URI_WITH_TAG=$(docker inspect metrics-weather-service:latest |  jq -r '.[0].RepoDigests[0]')
+
+docker build -t metrics-weather-client:latest SimulatedClients
+docker tag metrics-weather-client:latest "${CLIENT_REPO_URI}:latest"
+docker push "${CLIENT_REPO_URI}:latest"
+CLIENT_IMAGE_URI_WITH_TAG=$(docker inspect metrics-weather-client:latest | jq -r '.[0].RepoDigests[0]')
 
 DATADOG_SECRET_ARN=$(aws secretsmanager describe-secret --secret-id datadog_id | jq -r '.ARN')
 
@@ -25,6 +31,7 @@ aws cloudformation deploy \
         DatadogSecretArn="${DATADOG_SECRET_ARN}" \
         WeatherServiceImageRepoArn="${SERVICE_REPO_ARN}" \
         WeatherServiceUriWithTag="${SERVICE_IMAGE_URI_WITH_TAG}" \
+        SimulatedClientUriWithTag="${CLIENT_IMAGE_URI_WITH_TAG}" \
     --tags \
         Demo=MetricDemo
 
