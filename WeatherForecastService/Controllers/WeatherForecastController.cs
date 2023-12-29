@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using WeatherForecastService.Metrics;
+using WeatherForecastService.Models;
 using WeatherForecastService.Services;
 
 namespace WeatherForecastService.Controllers

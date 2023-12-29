@@ -1,4 +1,6 @@
-﻿namespace WeatherForecastService.Services
+﻿using WeatherForecastService.Models;
+
+namespace WeatherForecastService.Services
 {
     public interface IWeatherService
     {

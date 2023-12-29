@@ -4,7 +4,7 @@
     {
         public int HttpStatusCode { get; init; }
 
-        protected WeatherExceptionBase(int httpStatusCode, string message) : base(message) 
+        protected WeatherExceptionBase(int httpStatusCode, string message) : base(message)
         {
             HttpStatusCode = httpStatusCode;
         }

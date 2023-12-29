@@ -1,4 +1,4 @@
-namespace WeatherForecastService
+namespace WeatherForecastService.Models
 {
     public class WeatherForecast
     {

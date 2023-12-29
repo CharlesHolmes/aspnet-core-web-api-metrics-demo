@@ -1,5 +1,6 @@
 ﻿using WeatherForecastService.Errors;
 using WeatherForecastService.Latency;
+using WeatherForecastService.Models;
 
 namespace WeatherForecastService.Services
 {

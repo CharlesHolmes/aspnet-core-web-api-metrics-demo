@@ -1,10 +1,10 @@
-using WeatherForecastService.Metrics;
 using Amazon;
-using Amazon.Extensions.NETCore.Setup;
-using Amazon.Runtime;
 using Amazon.CloudWatch;
-using WeatherForecastService.Latency;
+using Amazon.Extensions.NETCore.Setup;
 using WeatherForecastService.Errors;
+using WeatherForecastService.Latency;
+using WeatherForecastService.Metrics;
+using WeatherForecastService.Services;
 
 namespace WeatherForecastService
 {
@@ -20,7 +20,9 @@ namespace WeatherForecastService
                 .AddDefaultAWSOptions(new AWSOptions { Region = RegionEndpoint.USEast1 })
                 .AddAWSService<IAmazonCloudWatch>()
                 .AddSingleton<IWeatherForecastMetrics, WeatherForecastMetrics>()
-                .AddSingleton<IFakeLatencySource, FakeLatencySource>();
+                .AddSingleton<IFakeLatencySource, FakeLatencySource>()
+                .AddSingleton<IFakeErrorSource, FakeErrorSource>()
+                .AddSingleton<IWeatherService, WeatherService>();
             var app = builder.Build();
             app.UseSwagger();
             app.UseSwaggerUI();
