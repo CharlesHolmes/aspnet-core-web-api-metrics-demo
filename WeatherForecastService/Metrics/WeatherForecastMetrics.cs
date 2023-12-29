@@ -17,31 +17,17 @@ namespace WeatherForecastService.Metrics
             _logger = logger;
         }
 
-        public async Task IncrementGaussianRequestCount()
+        public async Task IncrementRequestCount()
         {
-            var cloudWatchRequest = IncrementCloudWatchCounter("Request Count (Gaussian Latency)");
-            IncrementDatadogCounter("weather_api.gaussian_requests.count");
+            var cloudWatchRequest = IncrementCloudWatchCounter("Weather Forecast Request Count");
+            IncrementDatadogCounter("weather_api.forecast_requests.count");
             await cloudWatchRequest;
         }
 
-        public async Task IncrementUniformRequestCount()
+        public async Task RecordRequestLatency(int milliseconds)
         {
-            var cloudWatchRequest = IncrementCloudWatchCounter("Request Count (Uniform Latency)");
-            IncrementDatadogCounter("weather_api.uniform_requests.count");
-            await cloudWatchRequest;
-        }
-
-        public async Task RecordGaussianRequestLatency(int milliseconds)
-        {
-            var cloudWatchRequest = SetCloudWatchHistogram("Request Latency (Gaussian Distribution)", milliseconds);
-            SetDatadogHistogram("weather_api.gaussian_requests.latency", milliseconds);
-            await cloudWatchRequest;
-        }
-
-        public async Task RecordUniformRequestLatency(int milliseconds)
-        {
-            var cloudWatchRequest = SetCloudWatchHistogram("Request Latency (Uniform Distribution)", milliseconds);
-            SetDatadogHistogram("weather_api.uniform_requests.latency", milliseconds);
+            var cloudWatchRequest = SetCloudWatchHistogram("Weather Forecast Request Latency", milliseconds);
+            SetDatadogHistogram("weather_api.forecast_requests.latency", milliseconds);
             await cloudWatchRequest;
         }
 

@@ -2,9 +2,7 @@
 {
     public interface IWeatherForecastMetrics
     {
-        Task IncrementGaussianRequestCount();
-        Task IncrementUniformRequestCount();
-        Task RecordGaussianRequestLatency(int milliseconds);
-        Task RecordUniformRequestLatency(int milliseconds);
+        Task IncrementRequestCount();
+        Task RecordRequestLatency(int milliseconds);
     }
 }

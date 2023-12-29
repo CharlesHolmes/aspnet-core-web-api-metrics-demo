@@ -4,6 +4,7 @@ using Amazon.Extensions.NETCore.Setup;
 using Amazon.Runtime;
 using Amazon.CloudWatch;
 using WeatherForecastService.Latency;
+using WeatherForecastService.Errors;
 
 namespace WeatherForecastService
 {
@@ -19,12 +20,13 @@ namespace WeatherForecastService
                 .AddDefaultAWSOptions(new AWSOptions { Region = RegionEndpoint.USEast1 })
                 .AddAWSService<IAmazonCloudWatch>()
                 .AddSingleton<IWeatherForecastMetrics, WeatherForecastMetrics>()
-                .AddSingleton<IFakeLatency, FakeLatency>();
+                .AddSingleton<IFakeLatencySource, FakeLatencySource>();
             var app = builder.Build();
             app.UseSwagger();
             app.UseSwaggerUI();
             app.UseAuthorization();
             app.MapControllers();
+            app.UseWeatherExceptionHandler();
             await app.RunAsync();
         }
     }
