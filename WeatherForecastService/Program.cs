@@ -26,11 +26,11 @@ namespace WeatherForecastService
                 .AddSingleton<IFakeErrorSource, FakeErrorSource>()
                 .AddSingleton<IWeatherService, WeatherService>();
             var app = builder.Build();
+            app.UseWeatherExceptionHandler();
             app.UseSwagger();
             app.UseSwaggerUI();
             app.UseAuthorization();
             app.MapControllers();
-            app.UseWeatherExceptionHandler();
             await app.RunAsync();
         }
     }
