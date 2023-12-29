@@ -17,8 +17,8 @@ const cities = [
 
 export default function () {
     const city = cities[Math.floor(Math.random() * cities.length)];
-    const includeRadar = Math.Floor(Math.random() * 2) == 1;
-    const includeSatellite = Math.Floor(Math.Random() * 2) == 1;
+    const includeRadar = Math.floor(Math.random() * 2) == 1;
+    const includeSatellite = Math.floor(Math.random() * 2) == 1;
     const gaussianResponse = http.get(`${__ENV.PROTOCOL}://${__ENV.WEATHER_SERVICE_HOSTNAME}/WeatherForecast?city=${city}&includeRadar=${includeRadar}&includeSatellite=${includeSatellite}`);
     check(gaussianResponse, { 'status was 200': (r) => r.status == 200 });
 }
