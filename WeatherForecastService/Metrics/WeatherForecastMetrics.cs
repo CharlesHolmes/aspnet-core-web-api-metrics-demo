@@ -1,95 +1,28 @@
-﻿using Amazon.CloudWatch;
-using Amazon.CloudWatch.Model;
-using StatsdClient;
-
-namespace WeatherForecastService.Metrics
+﻿namespace WeatherForecastService.Metrics
 {
     public class WeatherForecastMetrics : IWeatherForecastMetrics
     {
-        private readonly ILogger<WeatherForecastMetrics> _logger;
-        private readonly IAmazonCloudWatch _cloudWatch;
+        private readonly ICloudwatchMetrics _cloudwatchMetrics;
+        private readonly IDatadogMetrics _datadogMetrics;
 
         public WeatherForecastMetrics(
-            IAmazonCloudWatch cloudWatch,
-            ILogger<WeatherForecastMetrics> logger)
+            ICloudwatchMetrics cloudwatchMetrics,
+            IDatadogMetrics datadogMetrics)
         {
-            _cloudWatch = cloudWatch;
-            _logger = logger;
+            _cloudwatchMetrics = cloudwatchMetrics;
+            _datadogMetrics = datadogMetrics;
         }
 
-        public async Task IncrementRequestCount()
+        public async Task IncrementRequestCount(MetricTags tags)
         {
-            var cloudWatchRequest = IncrementCloudWatchCounter("Weather Forecast Request Count");
-            IncrementDatadogCounter("weather_api.forecast_requests.count");
-            await cloudWatchRequest;
+            await _cloudwatchMetrics.IncrementCloudWatchCounter("Weather Forecast Request Count", tags);
+            _datadogMetrics.IncrementDatadogCounter("weather_api.forecast_requests.count", tags);
         }
 
-        public async Task RecordRequestLatency(int milliseconds)
+        public async Task RecordRequestLatency(int milliseconds, MetricTags tags)
         {
-            var cloudWatchRequest = SetCloudWatchHistogram("Weather Forecast Request Latency", milliseconds);
-            SetDatadogHistogram("weather_api.forecast_requests.latency", milliseconds);
-            await cloudWatchRequest;
-        }
-
-        private Task IncrementCloudWatchCounter(string name)
-        {
-            return EmitCloudWatchMetric(name, StandardUnit.Count, 1);
-        }
-
-        private Task SetCloudWatchHistogram(string name, double value)
-        {
-            return EmitCloudWatchMetric(name, StandardUnit.Milliseconds, value);
-        }
-
-        private Task EmitCloudWatchMetric(string name, StandardUnit unit, double value)
-        {
-            return _cloudWatch.PutMetricDataAsync(new PutMetricDataRequest
-            {
-                Namespace = "WeatherForecastMetricsDemo",
-                MetricData = new List<MetricDatum>
-                {
-                    new MetricDatum
-                    {
-                        MetricName = name,
-                        Unit = unit,
-                        Value = value,
-                        StorageResolution = 1
-                    }
-                }
-            });
-        }
-
-        private void IncrementDatadogCounter(string name)
-        {
-            EmitToDatadog(client => client.Increment(name));
-        }
-
-        private void SetDatadogHistogram(string name, double value)
-        {
-            EmitToDatadog(client => client.Histogram(name, value));
-        }
-
-        private void EmitToDatadog(Action<DogStatsdService> action)
-        {
-            using (var dogStats = new DogStatsdService())
-            {
-                var config = new StatsdConfig
-                {
-                    StatsdServerName = "127.0.0.1",
-                    StatsdPort = 8125
-                };
-
-                bool configured = dogStats.Configure(config, (e) =>
-                {
-                    _logger.LogCritical(e, "Cannot initialize dogstatsd.");
-                    throw new InvalidOperationException("Cannot initialize dogstatsd.", e);
-                });
-
-                if (configured)
-                {
-                    action(dogStats);
-                }
-            }
+            await _cloudwatchMetrics.SetCloudWatchHistogram("Weather Forecast Request Latency", milliseconds, tags);
+            _datadogMetrics.SetDatadogHistogram("weather_api.forecast_requests.latency", milliseconds, tags);
         }
     }
 }
