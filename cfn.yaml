@@ -221,7 +221,7 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       HealthCheckIntervalSeconds: 20
-      HealthCheckPath: /WeatherForecast/GetWithUniformLatency
+      HealthCheckPath: /WeatherForecast
       HealthCheckTimeoutSeconds: 10
       UnhealthyThresholdCount: 2
       HealthyThresholdCount: 2
