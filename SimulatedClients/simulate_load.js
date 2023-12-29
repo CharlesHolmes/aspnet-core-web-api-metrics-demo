@@ -6,9 +6,19 @@ export const options = {
     duration: '1h'
 };
 
+const cities = [
+    'New York',
+    'London',
+    'Dubai',
+    'Hong Kong',
+    'Bend',
+    'St. Louis'
+];
+
 export default function () {
-    const gaussianResponse = http.get(`${__ENV.PROTOCOL}://${__ENV.WEATHER_SERVICE_HOSTNAME}/WeatherForecast/GetWithGaussianLatency`);
+    const city = cities[Math.floor(Math.random() * cities.length)];
+    const includeRadar = Math.floor(Math.random() * 2) == 1;
+    const includeSatellite = Math.floor(Math.random() * 2) == 1;
+    const gaussianResponse = http.get(`${__ENV.PROTOCOL}://${__ENV.WEATHER_SERVICE_HOSTNAME}/WeatherForecast?city=${city}&includeRadar=${includeRadar}&includeSatellite=${includeSatellite}`);
     check(gaussianResponse, { 'status was 200': (r) => r.status == 200 });
-    const uniformResponse = http.get(`${__ENV.PROTOCOL}://${__ENV.WEATHER_SERVICE_HOSTNAME}/WeatherForecast/GetWithUniformLatency`);
-    check(uniformResponse, { 'status was 200': (r) => r.status == 200 });
 }

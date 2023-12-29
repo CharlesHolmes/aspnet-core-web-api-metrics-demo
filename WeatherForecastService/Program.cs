@@ -20,15 +20,17 @@ namespace WeatherForecastService
                 .AddDefaultAWSOptions(new AWSOptions { Region = RegionEndpoint.USEast1 })
                 .AddAWSService<IAmazonCloudWatch>()
                 .AddSingleton<IWeatherForecastMetrics, WeatherForecastMetrics>()
+                .AddSingleton<ICloudwatchMetrics, CloudwatchMetrics>()
+                .AddSingleton<IDatadogMetrics, DatadogMetrics>()
                 .AddSingleton<IFakeLatencySource, FakeLatencySource>()
                 .AddSingleton<IFakeErrorSource, FakeErrorSource>()
                 .AddSingleton<IWeatherService, WeatherService>();
             var app = builder.Build();
+            app.UseWeatherExceptionHandler();
             app.UseSwagger();
             app.UseSwaggerUI();
             app.UseAuthorization();
             app.MapControllers();
-            app.UseWeatherExceptionHandler();
             await app.RunAsync();
         }
     }
