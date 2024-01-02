@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
 using System.Diagnostics;
 using WeatherForecastService.Metrics;
 using WeatherForecastService.Models;
@@ -26,11 +27,11 @@ namespace WeatherForecastService.Controllers
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-            MetricTags tags = GetTags(city, includeRadar, includeSatellite);
+            MetricTags tags = GetTags(GetUser(), city, includeRadar, includeSatellite);
             try
             {
                 await _metrics.IncrementRequestCount(tags);
-                return await _service.GetWeatherForecasts();
+                return await _service.GetWeatherForecasts(includeRadar, includeSatellite);
             }
             finally
             {
@@ -39,10 +40,24 @@ namespace WeatherForecastService.Controllers
             }
         }
 
-        private static MetricTags GetTags(string city, bool includeRadar, bool includeSatellite)
+        private string GetUser()
+        {
+            if (Request.Headers.TryGetValue("weather-user", out StringValues userHeader)
+                && userHeader.Count == 1)
+            {
+                return userHeader.Single();
+            }
+            else
+            {
+                return "n/a";
+            }
+        }
+
+        private static MetricTags GetTags(string userName, string city, bool includeRadar, bool includeSatellite)
         {
             return new MetricTags
             {
+                UserName = userName,
                 City = city,
                 IncludeRadar = includeRadar,
                 IncludeSatellite = includeSatellite

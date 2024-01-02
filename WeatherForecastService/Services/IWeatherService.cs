@@ -4,6 +4,6 @@ namespace WeatherForecastService.Services
 {
     public interface IWeatherService
     {
-        Task<IEnumerable<WeatherForecast>> GetWeatherForecasts();
+        Task<IEnumerable<WeatherForecast>> GetWeatherForecasts(bool includeRadar, bool includeSatellite);
     }
 }
