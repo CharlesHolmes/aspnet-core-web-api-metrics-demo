@@ -38,6 +38,7 @@ namespace WeatherForecastService.Metrics
         {
             return new string[]
             {
+                $"username:{tags.UserName}",
                 $"city:{tags.City}",
                 $"include_radar:{tags.IncludeRadar}",
                 $"include_satellite:{tags.IncludeSatellite}"

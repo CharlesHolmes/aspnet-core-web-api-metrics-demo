@@ -30,6 +30,11 @@ namespace WeatherForecastService.Metrics
             {
                 new Dimension
                 {
+                    Name = "Username",
+                    Value = tags.UserName
+                },
+                new Dimension
+                {
                     Name = "City",
                     Value = tags.City
                 },

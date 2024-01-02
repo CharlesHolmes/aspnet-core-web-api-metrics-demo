@@ -22,10 +22,12 @@ namespace WeatherForecastService.Services
             _latencySource = latencySource;
         }
 
-        public async Task<IEnumerable<WeatherForecast>> GetWeatherForecasts()
+        public async Task<IEnumerable<WeatherForecast>> GetWeatherForecasts(bool includeRadar, bool includeSatellite)
         {
             _errorSource.CauseExceptionMaybe();
             await _latencySource.DoSlowOperation();
+            if (includeRadar) await _latencySource.DoSlowOperation();
+            if (includeSatellite) await _latencySource.DoSlowOperation();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
                 Date = DateTimeOffset.Now.AddDays(index),

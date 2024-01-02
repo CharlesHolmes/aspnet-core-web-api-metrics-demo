@@ -3,7 +3,7 @@
     public class FakeLatencySource : IFakeLatencySource
     {
         private const int _gaussianMeanMs = 3000;
-        private const int _gaussianStdevMs = 1000;
+        private const int _gaussianStdevMs = 2000;
         private readonly Random _random = new Random();
 
         public Task DoSlowOperation()
