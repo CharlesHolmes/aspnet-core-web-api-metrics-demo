@@ -1,28 +1,25 @@
 ﻿namespace WeatherForecastService.Metrics
 {
-    public class WeatherForecastMetrics : IWeatherForecastMetrics
+    public class WeatherForecastMetricsLoggerSinkForDebugging : IWeatherForecastMetrics
     {
-        private readonly ICloudwatchMetrics _cloudwatchMetrics;
-        private readonly IDatadogMetrics _datadogMetrics;
+        private readonly ILogger<WeatherForecastMetricsLoggerSinkForDebugging> _logger;
 
-        public WeatherForecastMetrics(
-            ICloudwatchMetrics cloudwatchMetrics,
-            IDatadogMetrics datadogMetrics)
+        public WeatherForecastMetricsLoggerSinkForDebugging(
+            ILogger<WeatherForecastMetricsLoggerSinkForDebugging> logger)
         {
-            _cloudwatchMetrics = cloudwatchMetrics;
-            _datadogMetrics = datadogMetrics;
+            _logger = logger;
         }
 
-        public async Task IncrementRequestCount(MetricTags tags)
+        public Task IncrementRequestCount(MetricTags tags)
         {
-            await _cloudwatchMetrics.IncrementCloudWatchCounter("Weather Forecast Request Count", tags);
-            _datadogMetrics.IncrementDatadogCounter("weather_api.forecast_requests.count", tags);
+            _logger.LogInformation("Weather forecast request count was incremented.  Tags: {tags}", tags);
+            return Task.CompletedTask;
         }
 
-        public async Task RecordRequestLatency(int milliseconds, MetricTags tags)
+        public Task RecordRequestLatency(int milliseconds, MetricTags tags)
         {
-            await _cloudwatchMetrics.SetCloudWatchHistogram("Weather Forecast Request Latency", milliseconds, tags);
-            _datadogMetrics.SetDatadogHistogram("weather_api.forecast_requests.latency", milliseconds, tags);
+            _logger.LogInformation("Weather forecast request latency (ms) was {latency}.  Tags: {tags}", milliseconds, tags);
+            return Task.CompletedTask;
         }
     }
 }
