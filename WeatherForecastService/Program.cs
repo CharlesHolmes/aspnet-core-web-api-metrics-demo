@@ -19,12 +19,20 @@ namespace WeatherForecastService
                 .AddSwaggerGen()
                 .AddDefaultAWSOptions(new AWSOptions { Region = RegionEndpoint.USEast1 })
                 .AddAWSService<IAmazonCloudWatch>()
-                .AddSingleton<IWeatherForecastMetrics, WeatherForecastMetrics>()
-                .AddSingleton<ICloudwatchMetrics, CloudwatchMetrics>()
-                .AddSingleton<IDatadogMetrics, DatadogMetrics>()
                 .AddSingleton<IFakeLatencySource, FakeLatencySource>()
                 .AddSingleton<IFakeErrorSource, FakeErrorSource>()
                 .AddSingleton<IWeatherService, WeatherService>();
+            if (builder.Environment.IsDevelopment())
+            {
+                builder.Services.AddSingleton<IWeatherForecastMetrics, WeatherForecastMetricsLoggerSinkForDebugging>();
+            }
+            else
+            {
+                builder.Services.AddSingleton<IWeatherForecastMetrics, WeatherForecastMetrics>()
+                    .AddSingleton<ICloudwatchMetrics, CloudwatchMetrics>()
+                    .AddSingleton<IDatadogMetrics, DatadogMetrics>();
+            }
+
             var app = builder.Build();
             app.UseWeatherExceptionHandler();
             app.UseSwagger();
