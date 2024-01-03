@@ -1,6 +1,7 @@
 #!/bin/bash
 
-DATADOG_DD_SITE="us5.datadoghq.com"
+DATADOG_DD_SITE="${DATADOG_DD_SITE:=us5.datadoghq.com}"
+DATADOG_SECRET_NAME="${DATADOG_SECRET_NAME:=datadog_id}"
 
 aws cloudformation deploy --template-file image-repo.yaml --stack-name metrics-demo-repos --tags Demo=MetricDemo
 ACCOUNT=$(aws sts get-caller-identity | jq -r '.Account')
@@ -23,7 +24,7 @@ docker tag metrics-weather-client:latest "${CLIENT_REPO_URI}:latest"
 docker push "${CLIENT_REPO_URI}:latest"
 CLIENT_IMAGE_URI_WITH_TAG=$(docker inspect metrics-weather-client:latest | jq -r '.[0].RepoDigests[0]')
 
-DATADOG_SECRET_ARN=$(aws secretsmanager describe-secret --secret-id datadog_id | jq -r '.ARN')
+DATADOG_SECRET_ARN=$(aws secretsmanager describe-secret --secret-id $DATADOG_SECRET_NAME | jq -r '.ARN')
 
 aws cloudformation deploy \
     --template-file cfn.yaml \
