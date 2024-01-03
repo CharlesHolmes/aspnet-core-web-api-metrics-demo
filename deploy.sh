@@ -1,5 +1,7 @@
 #!/bin/bash
 
+DATADOG_DD_SITE="us5.datadoghq.com"
+
 aws cloudformation deploy --template-file image-repo.yaml --stack-name metrics-demo-repos --tags Demo=MetricDemo
 ACCOUNT=$(aws sts get-caller-identity | jq -r '.Account')
 REGION=$(aws configure get region)
@@ -32,6 +34,7 @@ aws cloudformation deploy \
         WeatherServiceImageRepoArn="${SERVICE_REPO_ARN}" \
         WeatherServiceUriWithTag="${SERVICE_IMAGE_URI_WITH_TAG}" \
         SimulatedClientUriWithTag="${CLIENT_IMAGE_URI_WITH_TAG}" \
+        DatadogDdSiteVariable="${DATADOG_DD_SITE}" \
     --tags \
         Demo=MetricDemo
 
