@@ -18,6 +18,9 @@ Parameters:
     Description: ARN of the secret containing the Datadog ID we will be using
     Type: String
     AllowedPattern: "arn:aws:secretsmanager:.+"
+  DatadogDdSiteVariable:
+    Description: The DD_SITE environment variable expected by Datadog.  API key won't work without the correct DD_SITE.
+    Type: String
   SimulatedClientUriWithTag:
     Description: The URI of the simulated client image that should be running, including its SHA-256 digest.
     Type: String
@@ -147,7 +150,7 @@ Resources:
             - Name: DD_DOGSTATSD_NON_LOCAL_TRAFFIC
               Value: true
             - Name: DD_SITE
-              Value: us5.datadoghq.com
+              Value: !Ref DatadogDdSiteVariable
           LogConfiguration:
             LogDriver: awslogs
             Options:
