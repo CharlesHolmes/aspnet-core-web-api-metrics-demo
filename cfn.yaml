@@ -86,6 +86,9 @@ Resources:
     Type: AWS::ECS::Cluster
     Properties:
       ClusterName: MetricsDemoCluster
+      ClusterSettings:
+        - Name: containerInsights
+          Value: enabled
   WeatherService:
     Type: AWS::ECS::Service
     DependsOn: LoadBalancerListener
