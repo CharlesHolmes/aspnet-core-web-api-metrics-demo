@@ -40,3 +40,8 @@ aws cloudformation deploy \
         Demo=MetricDemo
 
 aws cloudformation wait stack-create-complete --stack-name metrics-demo
+
+LB_HOSTNAME=$(aws cloudformation describe-stacks --stack-name metrics-demo | jq -r '.Stacks[] | select(.StackName == "metrics-demo") | .Outputs[] | select(.OutputKey == "LoadBalancerHostname") | .OutputValue')
+
+echo "Load balancer URL is http://${LB_HOSTNAME}"
+echo "Visit Swagger UI at http://${LB_HOSTNAME}/Swagger/"
