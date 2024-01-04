@@ -14,7 +14,7 @@ Parameters:
   WeatherServiceLoadBalancerPort:
     Type: Number
     Default: 80
-  DatadogSecretArn: #TODO (cholmes) enable Xray for services
+  DatadogSecretArn:
     Description: ARN of the secret containing the Datadog ID we will be using
     Type: String
     AllowedPattern: "arn:aws:secretsmanager:.+"
@@ -138,6 +138,9 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-group: !Ref WeatherServiceLogGroup
               awslogs-stream-prefix: ecs
+          Environment:
+            - Name: AWS_XRAY_DAEMON_ADDRESS 
+              Value: xray-sidecar:2000
         - Name: datadog-agent
           Image: 'public.ecr.aws/datadog/agent:latest'
           Secrets:
@@ -160,6 +163,14 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-group: !Ref WeatherServiceDatadogSidecarLogGroup
               awslogs-stream-prefix: ecs
+        - Name: xray-sidecar
+          Image: 'amazon/aws-xray-daemon'
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-region: !Ref AWS::Region
+              awslogs-group: !Ref WeatherServiceXraySidecarLogGroup
+              awslogs-stream-prefix: ecs
   WeatherServiceTaskRole:
     Type: AWS::IAM::Role
     Properties:
@@ -170,6 +181,8 @@ Resources:
             Principal:
               Service: ecs-tasks.amazonaws.com
             Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess'
       Policies:
         - PolicyName: datadog-permissions
           PolicyDocument:
@@ -277,6 +290,10 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: /ecs/WeatherService/DatadogSidecarContainer
+  WeatherServiceXraySidecarLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/WeatherService/XraySidecarContainer
   SimulatedClient:
     Type: AWS::ECS::Service
     Properties: 

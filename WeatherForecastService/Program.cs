@@ -1,6 +1,9 @@
 using Amazon;
 using Amazon.CloudWatch;
 using Amazon.Extensions.NETCore.Setup;
+using Amazon.XRay.Recorder.Core;
+using Amazon.XRay.Recorder.Core.Strategies;
+using Amazon.XRay.Recorder.Handlers.AwsSdk;
 using WeatherForecastService.Errors;
 using WeatherForecastService.Latency;
 using WeatherForecastService.Metrics;
@@ -31,9 +34,12 @@ namespace WeatherForecastService
                 builder.Services.AddSingleton<IWeatherForecastMetrics, WeatherForecastMetrics>()
                     .AddSingleton<ICloudwatchMetrics, CloudwatchMetrics>()
                     .AddSingleton<IDatadogMetrics, DatadogMetrics>();
+                AWSSDKHandler.RegisterXRayForAllServices();
+                AWSXRayRecorder.InitializeInstance(recorder: new AWSXRayRecorderBuilder().Build());
             }
 
             var app = builder.Build();
+            app.UseXRay("WeatherForecastService");
             app.UseWeatherExceptionHandler();
             app.UseSwagger();
             app.UseSwaggerUI();
