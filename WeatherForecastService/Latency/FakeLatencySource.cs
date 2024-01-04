@@ -1,4 +1,6 @@
-﻿namespace WeatherForecastService.Latency
+﻿using Amazon.XRay.Recorder.Core;
+
+namespace WeatherForecastService.Latency
 {
     public class FakeLatencySource : IFakeLatencySource
     {
@@ -6,7 +8,12 @@
         private const int _gaussianStdevMs = 2000;
         private readonly Random _random = new Random();
 
-        public Task DoSlowOperation()
+        public async Task DoSlowOperation()
+        {
+            await AWSXRayRecorder.Instance.TraceMethodAsync($"{nameof(FakeLatencySource)}.{nameof(DoSlowOperation)}", WaitRandomDelay);
+        }
+
+        private Task WaitRandomDelay()
         {
             // thanks, internet!
             // https://stackoverflow.com/a/218600
