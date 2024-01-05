@@ -10,7 +10,7 @@ This project demonstrates how a modern application might produce metrics that pr
 
 1. bash, Docker, AWS CLI v2, and jq are installed on your computer
 1. You have a Datadog region and API key.
-1. Yu are logged in with the AWS CLI.
+1. You are logged in with the AWS CLI.
 
 ### Deployment
 
