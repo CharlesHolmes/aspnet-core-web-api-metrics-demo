@@ -2,11 +2,12 @@ using Amazon;
 using Amazon.CloudWatch;
 using Amazon.Extensions.NETCore.Setup;
 using Amazon.XRay.Recorder.Core;
-using Amazon.XRay.Recorder.Core.Strategies;
 using Amazon.XRay.Recorder.Handlers.AwsSdk;
 using WeatherForecastService.Errors;
 using WeatherForecastService.Latency;
 using WeatherForecastService.Metrics;
+using WeatherForecastService.Metrics.Cloudwatch;
+using WeatherForecastService.Metrics.Datadog;
 using WeatherForecastService.Services;
 
 namespace WeatherForecastService
@@ -24,14 +25,15 @@ namespace WeatherForecastService
                 .AddAWSService<IAmazonCloudWatch>()
                 .AddSingleton<IFakeLatencySource, FakeLatencySource>()
                 .AddSingleton<IFakeErrorSource, FakeErrorSource>()
-                .AddSingleton<IWeatherService, WeatherService>();
+                .AddSingleton<IWeatherService, WeatherService>()
+                .AddSingleton<ISunMoonTimesService, SunMoonTimesService>();
             if (builder.Environment.IsDevelopment())
             {
-                builder.Services.AddSingleton<IWeatherForecastMetrics, WeatherForecastMetricsLoggerSinkForDebugging>();
+                builder.Services.AddSingleton<IWeatherApiMetrics, WeatherApiMetricsLoggerSinkForDebugging>();
             }
             else
             {
-                builder.Services.AddSingleton<IWeatherForecastMetrics, WeatherForecastMetrics>()
+                builder.Services.AddSingleton<IWeatherApiMetrics, WeatherApiMetrics>()
                     .AddSingleton<ICloudwatchMetrics, CloudwatchMetrics>()
                     .AddSingleton<IDatadogMetrics, DatadogMetrics>();
                 AWSSDKHandler.RegisterXRayForAllServices();

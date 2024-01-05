@@ -1,6 +1,6 @@
 ﻿using StatsdClient;
 
-namespace WeatherForecastService.Metrics
+namespace WeatherForecastService.Metrics.Datadog
 {
     public sealed class DatadogMetrics : IDatadogMetrics, IDisposable
     {
@@ -13,14 +13,14 @@ namespace WeatherForecastService.Metrics
             _client = GetDatadogClient();
         }
 
-        public void IncrementDatadogCounter(string name, MetricTags tags)
+        public void IncrementDatadogCounter(string name, Dictionary<string, string> tags)
         {
             string[] datadogTags = GetDatadogTags(tags);
             _client.Increment(name, tags: datadogTags);
 
         }
 
-        public void SetDatadogHistogram(string name, double value, MetricTags tags)
+        public void SetDatadogHistogram(string name, double value, Dictionary<string, string> tags)
         {
             string[] datadogTags = GetDatadogTags(tags);
             _client.Histogram(name, value, tags: datadogTags);
@@ -28,21 +28,14 @@ namespace WeatherForecastService.Metrics
 
         public void Dispose()
         {
-            if (_client != null)
-            {
-                _client.Dispose();
-            }
+            _client?.Dispose();
         }
 
-        private string[] GetDatadogTags(MetricTags tags)
+        private static string[] GetDatadogTags(Dictionary<string, string> tags)
         {
-            return new string[]
-            {
-                $"username:{tags.UserName}",
-                $"city:{tags.City}",
-                $"include_radar:{tags.IncludeRadar}",
-                $"include_satellite:{tags.IncludeSatellite}"
-            };
+            return tags
+                .Select(kvp => $"{kvp.Key.Replace(" ", "_").Replace("/", "_").ToLower()}:{kvp.Value}")
+                .ToArray();
         }
 
         private DogStatsdService GetDatadogClient()
