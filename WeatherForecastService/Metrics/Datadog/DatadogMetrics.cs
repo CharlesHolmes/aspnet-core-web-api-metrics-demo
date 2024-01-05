@@ -1,4 +1,5 @@
 ﻿using StatsdClient;
+using System.Text;
 
 namespace WeatherForecastService.Metrics.Datadog
 {
@@ -16,14 +17,14 @@ namespace WeatherForecastService.Metrics.Datadog
         public void IncrementDatadogCounter(string name, Dictionary<string, string> tags)
         {
             string[] datadogTags = GetDatadogTags(tags);
-            _client.Increment(name, tags: datadogTags);
+            _client.Increment(Sterilize(name), tags: datadogTags);
 
         }
 
         public void SetDatadogHistogram(string name, double value, Dictionary<string, string> tags)
         {
             string[] datadogTags = GetDatadogTags(tags);
-            _client.Histogram(name, value, tags: datadogTags);
+            _client.Histogram(Sterilize(name), value, tags: datadogTags);
         }
 
         public void Dispose()
@@ -34,8 +35,26 @@ namespace WeatherForecastService.Metrics.Datadog
         private static string[] GetDatadogTags(Dictionary<string, string> tags)
         {
             return tags
-                .Select(kvp => $"{kvp.Key.Replace(" ", "_").Replace("/", "_").ToLower()}:{kvp.Value}")
+                .Select(kvp => $"{Sterilize(kvp.Key)}:{kvp.Value}")
                 .ToArray();
+        }
+
+        private static string Sterilize(string input)
+        {
+            var result = new StringBuilder();
+            foreach (char c in input)
+            {
+                if (char.IsLetterOrDigit(c) || c == '.')
+                {
+                    result.Append(c);
+                }
+                else
+                {
+                    result.Append('_');
+                }
+            }
+
+            return result.ToString().ToLower();
         }
 
         private DogStatsdService GetDatadogClient()
