@@ -4,13 +4,13 @@ using WeatherForecastService.Models;
 
 namespace WeatherForecastService.Services
 {
-    public class SunMoonTimesService : ISunMoonTimesService
+    public class TideTimesService : ITideTimesService
     {
         private readonly IFakeErrorSource _errorSource;
         private readonly IFakeLatencySource _latencySource;
         private readonly Random _random;
 
-        public SunMoonTimesService(
+        public TideTimesService(
             IFakeErrorSource errorSource,
             IFakeLatencySource latencySource)
         {
@@ -19,18 +19,15 @@ namespace WeatherForecastService.Services
             _random = new Random();
         }
 
-        public async Task<SunMoonTimes> GetSunMoonData()
+        public async Task<IEnumerable<TideTime>> GetTideTimes()
         {
-
             _errorSource.CauseExceptionMaybe();
             await _latencySource.DoFastOperation();
-            return new SunMoonTimes
+            return Enumerable.Range(1, 4).Select(_ => new TideTime
             {
-                Sunrise = DateTimeOffset.Now.AddSeconds(_random.NextDouble() * 86400),
-                Sunset = DateTimeOffset.Now.AddSeconds(_random.NextDouble() * 86400),
-                Moonrise = DateTimeOffset.Now.AddSeconds(_random.NextDouble() * 86400),
-                Moonset = DateTimeOffset.Now.AddSeconds(_random.NextDouble() * 86400)
-            };
+                Time = DateTimeOffset.Now.AddSeconds(_random.NextDouble() * 86400),
+                Type = _random.Next(0, 2) == 0 ? "Low" : "High"
+            });
         }
     }
 }

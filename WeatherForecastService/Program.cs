@@ -26,7 +26,8 @@ namespace WeatherForecastService
                 .AddSingleton<IFakeLatencySource, FakeLatencySource>()
                 .AddSingleton<IFakeErrorSource, FakeErrorSource>()
                 .AddSingleton<IWeatherService, WeatherService>()
-                .AddSingleton<ISunMoonTimesService, SunMoonTimesService>();
+                .AddSingleton<ISunMoonTimesService, SunMoonTimesService>()
+                .AddSingleton<ITideTimesService, TideTimesService>();
             if (builder.Environment.IsDevelopment())
             {
                 builder.Services.AddSingleton<IWeatherApiMetrics, WeatherApiMetricsLoggerSinkForDebugging>();

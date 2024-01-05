@@ -13,7 +13,7 @@ namespace WeatherForecastService.Latency
         public async Task DoSlowOperation()
         {
             await AWSXRayRecorder.Instance.TraceMethodAsync(
-                $"{nameof(FakeLatencySource)}.{nameof(DoSlowOperation)}", 
+                $"{nameof(FakeLatencySource)}.{nameof(DoSlowOperation)}",
                 () => WaitRandomDelay(_longMeanMs, _longStdevMs));
         }
 
