@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Primitives;
 using System.Diagnostics;
 using WeatherForecastService.Metrics;
 using WeatherForecastService.Models;
@@ -9,13 +8,14 @@ namespace WeatherForecastService.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class WeatherForecastController : ControllerBase
+    public class WeatherForecastController : WeatherControllerBase
     {
-        private readonly IWeatherForecastMetrics _metrics;
+        private const string NAME_FOR_METRICS = "Weather Forecast Request";
+        private readonly IWeatherApiMetrics _metrics;
         private readonly IWeatherService _service;
 
         public WeatherForecastController(
-            IWeatherForecastMetrics metrics,
+            IWeatherApiMetrics metrics,
             IWeatherService service)
         {
             _metrics = metrics;
@@ -27,40 +27,27 @@ namespace WeatherForecastService.Controllers
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-            MetricTags tags = GetTags(GetUser(), city, includeRadar, includeSatellite);
+            Dictionary<string, string> tags = GetTags(GetUser(), city, includeRadar, includeSatellite);
             try
             {
-                await _metrics.IncrementRequestCount(tags);
+                await _metrics.IncrementRequestCount(NAME_FOR_METRICS, tags);
                 return await _service.GetWeatherForecasts(includeRadar, includeSatellite);
             }
             finally
             {
                 stopwatch.Stop();
-                await _metrics.RecordRequestLatency((int)stopwatch.ElapsedMilliseconds, tags);
+                await _metrics.RecordRequestLatency(NAME_FOR_METRICS, (int)stopwatch.ElapsedMilliseconds, tags);
             }
         }
 
-        private string GetUser()
+        private static Dictionary<string, string> GetTags(string userName, string city, bool includeRadar, bool includeSatellite)
         {
-            if (Request.Headers.TryGetValue("weather-user", out StringValues userHeader)
-                && userHeader.Count == 1)
+            return new Dictionary<string, string>
             {
-                return userHeader.Single();
-            }
-            else
-            {
-                return "n/a";
-            }
-        }
-
-        private static MetricTags GetTags(string userName, string city, bool includeRadar, bool includeSatellite)
-        {
-            return new MetricTags
-            {
-                UserName = userName,
-                City = city,
-                IncludeRadar = includeRadar,
-                IncludeSatellite = includeSatellite
+                { "UserName", userName },
+                { "City", city },
+                { "Include Radar", includeRadar.ToString() },
+                { "Include Satellite", includeSatellite.ToString() }
             };
         }
     }

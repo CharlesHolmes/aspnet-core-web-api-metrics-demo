@@ -22,7 +22,8 @@ const users = [
     {
         name: 'Alice',
         city: 'london',
-        includeRadar: true
+        includeRadar: true,
+        querySunMoonTimes: true
     },
     {
         name: 'Bob',
@@ -31,7 +32,8 @@ const users = [
     },
     {
         name: 'Charlie',
-        city: 'dubai'
+        city: 'dubai',
+        queryTideTimes: true
     },
     {
         name: 'David',
@@ -46,6 +48,28 @@ const users = [
 function getForecast(user, city, includeRadar, includeSatellite) {
     const response = http.get(
         `${__ENV.PROTOCOL}://${__ENV.WEATHER_SERVICE_HOSTNAME}/WeatherForecast?city=${city}&includeRadar=${includeRadar}&includeSatellite=${includeSatellite}`,
+        {
+            headers: {
+                'weather-user': user.name
+            }
+        });
+    check(response, { 'status was 200': (r) => r.status == 200 });
+}
+
+function getTideTimes(user, city) {
+    const response = http.get(
+        `${__ENV.PROTOCOL}://${__ENV.WEATHER_SERVICE_HOSTNAME}/TideTimes?city=${city}`,
+        {
+            headers: {
+                'weather-user': user.name
+            }
+        });
+    check(response, { 'status was 200': (r) => r.status == 200 });
+}
+
+function getSunMoonTimes(user, city) {
+    const response = http.get(
+        `${__ENV.PROTOCOL}://${__ENV.WEATHER_SERVICE_HOSTNAME}/SunMoonTimes?city=${city}`,
         {
             headers: {
                 'weather-user': user.name
@@ -74,4 +98,12 @@ export default function () {
     const includeRadar = getAttribute(user, 'includeRadar', includeRadarValues);
     const includeSatellite = getAttribute(user, 'includeSatellite', includeSatelliteValues);
     getForecast(user, city, includeRadar, includeSatellite);
+    const queryTideTimes = getAttribute(user, 'queryTideTimes', [true, false]);
+    if (queryTideTimes) {
+        getTideTimes(user, city);
+    }
+    const querySunMoonTimes = getAttribute(user, 'querySunMoonTimes', [true, false]);
+    if (querySunMoonTimes) {
+        getSunMoonTimes(user, city);
+    }
 }

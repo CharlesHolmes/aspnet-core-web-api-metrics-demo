@@ -1,7 +1,7 @@
 ﻿using Amazon.CloudWatch;
 using Amazon.CloudWatch.Model;
 
-namespace WeatherForecastService.Metrics
+namespace WeatherForecastService.Metrics.Cloudwatch
 {
     public class CloudwatchMetrics : ICloudwatchMetrics
     {
@@ -12,43 +12,21 @@ namespace WeatherForecastService.Metrics
             _cloudWatch = cloudWatch;
         }
 
-        public Task IncrementCloudWatchCounter(string name, MetricTags tags)
+        public Task IncrementCloudWatchCounter(string name, Dictionary<string, string> tags)
         {
             List<Dimension> dimensions = GetCloudwatchDimensions(tags);
             return EmitCloudWatchMetric(name, StandardUnit.Count, 1, dimensions);
         }
 
-        public Task SetCloudWatchHistogram(string name, double value, MetricTags tags)
+        public Task SetCloudWatchHistogram(string name, double value, Dictionary<string, string> tags)
         {
             List<Dimension> dimensions = GetCloudwatchDimensions(tags);
             return EmitCloudWatchMetric(name, StandardUnit.Milliseconds, value, dimensions);
         }
 
-        private List<Dimension> GetCloudwatchDimensions(MetricTags tags)
+        private List<Dimension> GetCloudwatchDimensions(Dictionary<string, string> tags)
         {
-            return new List<Dimension>
-            {
-                new Dimension
-                {
-                    Name = "Username",
-                    Value = tags.UserName
-                },
-                new Dimension
-                {
-                    Name = "City",
-                    Value = tags.City
-                },
-                new Dimension
-                {
-                    Name = "IncludeRadar",
-                    Value = tags.IncludeRadar.ToString()
-                },
-                new Dimension
-                {
-                    Name = "IncludeSatellite",
-                    Value = tags.IncludeSatellite.ToString()
-                }
-            };
+            return tags.Select(kvp => new Dimension { Name = kvp.Key, Value = kvp.Value }).ToList();
         }
 
         private Task EmitCloudWatchMetric(string name, StandardUnit unit, double value, List<Dimension> dimensions)
