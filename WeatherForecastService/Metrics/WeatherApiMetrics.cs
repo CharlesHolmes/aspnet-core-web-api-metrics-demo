@@ -19,15 +19,13 @@ namespace WeatherForecastService.Metrics
         public async Task IncrementRequestCount(string requestName, Dictionary<string, string> tags)
         {
             await _cloudwatchMetrics.IncrementCloudWatchCounter($"{requestName} Count", tags);
-            string processed = requestName.Replace(" ", "_").Replace("/", "_").ToLower();
-            _datadogMetrics.IncrementDatadogCounter($"weather_api.{processed}.count", tags);
+            _datadogMetrics.IncrementDatadogCounter($"weather_api.{requestName}.count", tags);
         }
 
         public async Task RecordRequestLatency(string requestName, int milliseconds, Dictionary<string, string> tags)
         {
             await _cloudwatchMetrics.SetCloudWatchHistogram($"{requestName} Latency", milliseconds, tags);
-            string processed = requestName.Replace(" ", "_").Replace("/", "_").ToLower();
-            _datadogMetrics.SetDatadogHistogram($"weather_api.{processed}.latency", milliseconds, tags);
+            _datadogMetrics.SetDatadogHistogram($"weather_api.{requestName}.latency", milliseconds, tags);
         }
     }
 }
