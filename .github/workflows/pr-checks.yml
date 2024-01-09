@@ -18,12 +18,16 @@ jobs:
                 # Semantic version range syntax or exact version of a dotnet version
                 dotnet-version: '6.x'
 
-            - name: Build with dotnet CLI
+            - name: Build WeatherForecastService with dotnet CLI
               run: |
                 cd WeatherForecastService
                 dotnet restore
                 dotnet publish -c Release -o out
                 
-            - name: Build Docker image
+            - name: Build WeatherForecastService Docker image
               run: |
                 docker build -t metrics-weather-service:latest WeatherForecastService
+
+            - name: Build SimulatedClients Docker image
+              run: |
+                docker build -t metrics-weather-client:latest SimulatedClients
