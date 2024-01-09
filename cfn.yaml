@@ -155,6 +155,10 @@ Resources:
               Value: true
             - Name: DD_DOGSTATSD_NON_LOCAL_TRAFFIC
               Value: true
+            - Name: DD_LOGS_ENABLED
+              Value: true
+            - Name: DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL
+              Value: true
             - Name: DD_SITE
               Value: !Ref DatadogDdSiteVariable
           LogConfiguration:
