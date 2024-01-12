@@ -1,0 +1,29 @@
+# Credit: https://github.com/SimpleJWT/drf-SimpleJWT-React/blob/7fe37747f9b4385faeaf5ec57b650ff21d82c1ae/.github/workflows/automerge.yml#L1
+
+name: "Dependabot Automerge - Action"
+
+on:
+  pull_request:
+
+jobs:
+  worker:
+    runs-on: ubuntu-latest
+
+    if: github.actor == 'dependabot[bot]'
+    steps:
+      - name: 'Wait for status checks'
+        id: waitforstatuschecks
+        uses: WyriHaximus/github-action-wait-for-status@v1.8
+        with:
+          ignoreActions: worker,WIP
+          checkInterval: 300
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Automerge'
+        uses: pascalgn/automerge-action@v0.16.2
+        if: steps.waitforstatuschecks.outputs.status == 'success'
+        env:
+          MERGE_LABELS: "update"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MERGE_DELETE_BRANCH: true
