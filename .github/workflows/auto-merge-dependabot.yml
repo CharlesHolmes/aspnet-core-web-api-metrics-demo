@@ -10,7 +10,7 @@ on:
 jobs:
   worker:
     runs-on: ubuntu-latest
-
+    permissions: write-all
     if: github.actor == 'dependabot[bot]'
     steps:
       - name: 'Wait for status checks'
