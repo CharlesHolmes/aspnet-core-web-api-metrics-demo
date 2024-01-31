@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.CloudWatch" Version="3.7.301.26" />
+    <PackageReference Include="AWSSDK.CloudWatch" Version="3.7.301.27" />
     <PackageReference Include="AWSSDK.CloudWatchLogs" Version="3.7.303.9" />
     <PackageReference Include="AWSSDK.Core" Version="3.7.302.3" />
     <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.7.300" />
