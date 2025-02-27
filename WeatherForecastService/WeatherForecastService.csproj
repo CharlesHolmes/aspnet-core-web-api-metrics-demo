@@ -26,7 +26,7 @@
     <PackageReference Include="AWSXRayRecorder.Handlers.AwsSdk" Version="2.13.0" />
     <PackageReference Include="Datadog.Trace.Bundle" Version="3.11.1" />
     <PackageReference Include="DogStatsD-CSharp-Client" Version="8.0.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.3.0" />
   </ItemGroup>
 
 </Project>
