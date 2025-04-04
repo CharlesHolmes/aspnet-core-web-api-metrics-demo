@@ -19,7 +19,7 @@
 
   <ItemGroup>
     <PackageReference Include="AWSSDK.CloudWatch" Version="3.7.402.76" />
-    <PackageReference Include="AWSSDK.CloudWatchLogs" Version="3.7.410.15" />
+    <PackageReference Include="AWSSDK.CloudWatchLogs" Version="3.7.410.16" />
     <PackageReference Include="AWSSDK.Core" Version="3.7.402.34" />
     <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.7.400" />
     <PackageReference Include="AWSXRayRecorder.Handlers.AspNetCore" Version="2.12.0" />
